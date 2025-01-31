@@ -1,28 +1,36 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import App from './App';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Login from './Login';
 import DeviceDashboard from './DeviceDashboard';
 
+const theme = createTheme();
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+function App() {
+  const [token, setToken] = useState(localStorage.getItem('authToken') || '');
 
-function Device() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <DeviceDashboard />
+      <Router>
+        <Routes>
+          <Route
+            path="/login"
+            element={token ? <Navigate to="/devices" /> : <Login setToken={setToken} />}
+          />
+          <Route
+            path="/devices"
+            element={token ? <DeviceDashboard token={token} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="*"
+            element={<Navigate to={token ? "/devices" : "/login"} />}
+          />
+        </Routes>
+      </Router>
     </ThemeProvider>
   );
 }
 
-export default Device;
+export default App;
