@@ -67,6 +67,22 @@ const DeviceDashboard = ({ token, setToken }) => {
     navigate('/login');
   };
 
+  const handleImageUpdate = async (deviceId, newImage) => {
+    try {
+      await fetch(`http://localhost:8080/device/${deviceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: newImage }),
+      });
+
+      setDevices(prev => prev.map(device => 
+        device.id === deviceId ? { ...device, imageUrl: newImage } : device
+      ));
+    } catch (err) {
+      throw new Error('Image update failed');
+    }
+  };
+  
   const currentLocation = groupedLocations.find(l => l.name === selectedLocation);
   const rooms = currentLocation ? Object.entries(currentLocation.rooms) : [];
 
