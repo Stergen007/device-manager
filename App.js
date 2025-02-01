@@ -5,10 +5,19 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Login from './Login';
 import DeviceDashboard from './DeviceDashboard';
 
-const theme = createTheme();
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+  },
+});
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('authToken') || '');
+  const [token, setToken] = useState(() => localStorage.getItem('authToken') || '');
 
   return (
     <ThemeProvider theme={theme}>
@@ -21,7 +30,13 @@ function App() {
           />
           <Route
             path="/devices"
-            element={token ? <DeviceDashboard token={token} /> : <Navigate to="/login" />}
+            element={
+              token ? (
+                <DeviceDashboard token={token} setToken={setToken} />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
           />
           <Route
             path="*"

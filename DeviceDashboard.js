@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Alert } from '@mui/material';
-import DeviceCard from './DeviceCard';
-import LocationTabs from './LocationsTabs';
+import AppBarWithSignout from './AppBarWithSignout';
 import RoomDrawer from './RoomDrawer';
+import DeviceCard from './DeviceCard';
 import Grid from '@mui/material/Grid2';
 
-const DeviceDashboard = () => {
+const DeviceDashboard = ({ token, setToken }) => {
+  const navigate = useNavigate();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedRoom, setSelectedRoom] = useState('');
 
+  // Group devices by location and room
   const groupedLocations = devices.reduce((acc, device) => {
     const location = acc.find(l => l.name === device.locationName);
     if (location) {
@@ -29,60 +32,54 @@ const DeviceDashboard = () => {
   useEffect(() => {
     const fetchDevices = async () => {
       try {
-        const response = await fetch('http://localhost:8080/devices');
+        const response = await fetch('/api/devices', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) handleSignOut();
+          throw new Error('Failed to fetch devices');
+        }
+
         const data = await response.json();
         setDevices(data);
         
+        // Set initial location and room
         if (data.length > 0) {
           setSelectedLocation(data[0].locationName);
           setSelectedRoom(data[0].roomName);
         }
       } catch (err) {
-        setError('Failed to fetch devices');
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDevices();
-  }, []);
+    token && fetchDevices();
+  }, [token]);
 
-  const handleLocationChange = (newLocation) => {
-    setSelectedLocation(newLocation);
-    const firstRoom = groupedLocations
-      .find(l => l.name === newLocation)
-      ?.rooms[0]?.[0]?.roomName;
-    setSelectedRoom(firstRoom || '');
+  const handleSignOut = () => {
+    localStorage.removeItem('authToken');
+    setToken(null);
+    navigate('/login');
   };
-
-  const handleImageUpdate = async (deviceId, newImage) => {
-    try {
-      await fetch(`http://localhost:8080/device/${deviceId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: newImage }),
-      });
-
-      setDevices(prev => prev.map(device => 
-        device.id === deviceId ? { ...device, imageUrl: newImage } : device
-      ));
-    } catch (err) {
-      throw new Error('Image update failed');
-    }
-  };
-
-  if (loading) return <CircularProgress sx={{ mt: 4 }} />;
-  if (error) return <Alert severity="error">{error}</Alert>;
 
   const currentLocation = groupedLocations.find(l => l.name === selectedLocation);
   const rooms = currentLocation ? Object.entries(currentLocation.rooms) : [];
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <LocationTabs
+      <AppBarWithSignout
         locations={groupedLocations}
         selectedLocation={selectedLocation}
-        onLocationChange={handleLocationChange}
+        onLocationChange={(newLocation) => {
+          setSelectedLocation(newLocation);
+          setSelectedRoom('');
+        }}
+        onLogout={handleSignOut}
       />
 
       <RoomDrawer
@@ -91,24 +88,30 @@ const DeviceDashboard = () => {
         onRoomSelect={setSelectedRoom}
       />
 
-      <Box sx={{ 
+      <Box component="main" sx={{ 
         flexGrow: 1,
         p: 3,
         marginLeft: '240px',
         marginTop: '64px'
       }}>
-        <Grid container spacing={3}>
-          {rooms.map(([roomName, roomDevices]) => (
-            roomName === selectedRoom && roomDevices.map((device) => (
-              <Grid item xs={12} sm={6} md={4} key={device.id}>
-                <DeviceCard 
-                  device={device}
-                  onUpdate={handleImageUpdate}
-                />
-              </Grid>
-            ))
-          ))}
-        </Grid>
+        {loading ? (
+          <CircularProgress />
+        ) : error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : (
+          <Grid container spacing={3}>
+            {rooms.map(([roomName, roomDevices]) => (
+              roomName === selectedRoom && roomDevices.map((device) => (
+                <Grid item xs={12} sm={6} md={4} key={device.id}>
+                  <DeviceCard 
+                    device={device}
+                    onUpdate={handleImageUpdate}
+                  />
+                </Grid>
+              ))
+            ))}
+          </Grid>
+        )}
       </Box>
     </Box>
   );
