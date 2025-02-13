@@ -1,44 +1,50 @@
-import React, { useState } from 'react';
+// Login.js
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Container, Typography, Box } from '@mui/material';
+import { Button, Container, Box, Typography } from '@mui/material';
 
-const Login = ({ setToken }) => {
-  const [authToken, setAuthToken] = useState('');
+const Login = () => {
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    localStorage.setItem('authToken', authToken);
-    setToken(authToken);
-    navigate('/devices');
+  const handleLoginClick = () => {
+    // Redirect to backend login endpoint
+    window.location.href = 'http://localhost:8080/login';
   };
 
   return (
-    <Container maxWidth="xs">
-      <Box sx={{ mt: 8, textAlign: 'center' }}>
+    <Container maxWidth="sm">
+      <Box 
+        sx={{ 
+          mt: 8, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          textAlign: 'center'
+        }}
+      >
         <Typography variant="h4" gutterBottom>
-          Device Dashboard
+          Device Management System
         </Typography>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            label="Authorization Token"
-            value={authToken}
-            onChange={(e) => setAuthToken(e.target.value)}
-            margin="normal"
-            required
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="primary"
-            sx={{ mt: 3 }}
-          >
-            Sign In
-          </Button>
-        </form>
+        <Typography variant="body1" sx={{ mb: 3 }}>
+          Please sign in to access your devices
+        </Typography>
+        
+        <Button
+          variant="contained"
+          size="large"
+          onClick={handleLoginClick}
+          sx={{ 
+            width: 200,
+            py: 1.5,
+            fontSize: '1.1rem'
+          }}
+        >
+          Sign In
+        </Button>
+        
+        <Typography variant="body2" sx={{ mt: 3, color: 'text.secondary' }}>
+          You will be redirected to our secure login page
+        </Typography>
       </Box>
     </Container>
   );
